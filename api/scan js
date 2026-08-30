@@ -106,7 +106,7 @@ Rules:
           ],
 
           generationConfig: {
-            maxOutputTokens: 900
+            maxOutputTokens: 1500
           }
         })
       }
