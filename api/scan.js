@@ -1,0 +1,171 @@
+export default async function handler(req, res) {
+  // Test whether the Vercel route is deployed
+  if (req.method === "GET") {
+    return res.status(200).json({
+      ok: true,
+      route: "scan",
+      model: "gemini-3.5-flash",
+      message: "VitaMind Scanner API is online"
+    });
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      error: "Method not allowed"
+    });
+  }
+
+  try {
+    const { image } = req.body || {};
+
+    if (!image || typeof image !== "string") {
+      return res.status(400).json({
+        error: "Image is required"
+      });
+    }
+
+    if (!image.startsWith("data:image/")) {
+      return res.status(400).json({
+        error: "Invalid image format"
+      });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({
+        error: "GEMINI_API_KEY is missing in Vercel Environment Variables"
+      });
+    }
+
+    const model = "gemini-3.5-flash";
+
+    // Separate data URL into metadata + base64
+    const commaIndex = image.indexOf(",");
+
+    if (commaIndex === -1) {
+      return res.status(400).json({
+        error: "Invalid image data"
+      });
+    }
+
+    const header = image.substring(0, commaIndex);
+    const base64Image = image.substring(commaIndex + 1);
+
+    if (!base64Image) {
+      return res.status(400).json({
+        error: "Image data is empty"
+      });
+    }
+
+    const mimeMatch = header.match(
+      /^data:(image\/[a-zA-Z0-9.+-]+);base64$/
+    );
+
+    const mimeType = mimeMatch?.[1] || "image/jpeg";
+
+    const prompt = `
+Analyze this food package, ingredient list, or nutrition label.
+
+Return the result using exactly these sections:
+
+Product:
+Ingredients:
+Possible allergens:
+Nutrition information visible:
+General notes:
+
+Rules:
+- Only mention information clearly visible in the image.
+- Never invent ingredients or nutrition values.
+- If something cannot be read clearly, say "Not clearly visible".
+- Do not diagnose diseases or medical conditions.
+- Do not claim a food is safe for a specific person.
+- Keep the answer concise but complete.
+- End with: "Always check the original package for exact allergen and nutrition information."
+`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey
+        },
+
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: prompt
+                },
+                {
+                  inlineData: {
+                    mimeType: mimeType,
+                    data: base64Image
+                  }
+                }
+              ]
+            }
+          ],
+
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 1500
+          }
+        })
+      }
+    );
+
+    const rawText = await response.text();
+
+    let data;
+
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      console.error("Gemini returned non-JSON:", rawText);
+
+      return res.status(502).json({
+        error: "Gemini returned an invalid server response"
+      });
+    }
+
+    if (!response.ok) {
+      console.error("Gemini Scanner API error:", data);
+
+      return res.status(response.status).json({
+        error:
+          data?.error?.message ||
+          "Gemini scan request failed"
+      });
+    }
+
+    const text =
+      data?.candidates?.[0]?.content?.parts
+        ?.map(part => part.text || "")
+        .join("")
+        .trim();
+
+    if (!text) {
+      return res.status(500).json({
+        error: "Gemini returned an empty scan result"
+      });
+    }
+
+    return res.status(200).json({
+      text
+    });
+
+  } catch (error) {
+    console.error("VitaMind Scanner server error:", error);
+
+    return res.status(500).json({
+      error: error.message || "Scanner server error"
+    });
+  }
+      }
