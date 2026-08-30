@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "framework": null,
+  "buildCommand": "echo \"VitaMind static app: no build step\"",
+  "outputDirectory": "."
+}

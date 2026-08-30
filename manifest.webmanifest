@@ -1,0 +1,9 @@
+{
+  "name": "VitaMind Ultimate v2",
+  "short_name": "VitaMind",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e0e19",
+  "theme_color": "#7457e8",
+  "description": "Personal wellness tracking and learning companion"
+}
