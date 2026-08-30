@@ -1,9 +1,10 @@
 export default async function handler(req, res) {
-  // Allow GET request to test if the route is working
+  // Test API route
   if (req.method === "GET") {
     return res.status(200).json({
       ok: true,
       route: "chat",
+      model: "gemini-3.5-flash",
       message: "VitaMind AI API is online"
     });
   }
@@ -19,7 +20,7 @@ export default async function handler(req, res) {
 
     if (!message || typeof message !== "string") {
       return res.status(400).json({
-        error: "Please provide a message"
+        error: "Please provide a valid message"
       });
     }
 
@@ -31,9 +32,22 @@ export default async function handler(req, res) {
       });
     }
 
-    // Use GEMINI_MODEL from Vercel if available
-    const model =
-      process.env.GEMINI_MODEL || "gemini-flash-latest";
+    // FINAL MODEL
+    const model = "gemini-3.5-flash";
+
+    const prompt = `You are VitaMind AI, a general wellness education assistant.
+
+Rules:
+- Give clear, simple, age-appropriate general health information.
+- Do not diagnose diseases or conditions.
+- Do not prescribe medicines.
+- Do not provide medication doses.
+- Do not claim certainty about someone's personal health.
+- For serious or urgent symptoms, recommend contacting a qualified healthcare professional or local emergency services.
+- Keep answers concise and practical.
+
+User question:
+${message}`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
@@ -50,34 +64,31 @@ export default async function handler(req, res) {
             {
               parts: [
                 {
-                  text: `You are VitaMind AI.
-
-You provide general wellness and health education.
-
-Rules:
-- Give simple and useful information.
-- Do not diagnose diseases.
-- Do not prescribe medicines.
-- Do not provide medication doses.
-- Do not claim certainty about someone's health.
-- If someone describes serious or urgent symptoms, tell them to contact a qualified healthcare professional or local emergency services.
-
-User question:
-${message}`
+                  text: prompt
                 }
               ]
             }
           ],
 
           generationConfig: {
-            temperature: 0.5,
             maxOutputTokens: 700
           }
         })
       }
     );
 
-    const data = await response.json();
+    // Safely read response
+    const rawText = await response.text();
+
+    let data;
+
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      return res.status(502).json({
+        error: "Gemini returned an invalid response"
+      });
+    }
 
     if (!response.ok) {
       console.error("Gemini API error:", data);
@@ -102,12 +113,12 @@ ${message}`
     }
 
     return res.status(200).json({
-      text: text
+      text
     });
 
   } catch (error) {
 
-    console.error("VitaMind AI error:", error);
+    console.error("VitaMind AI server error:", error);
 
     return res.status(500).json({
       error: error.message || "Internal server error"
