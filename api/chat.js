@@ -71,7 +71,7 @@ ${message}`;
           ],
 
           generationConfig: {
-            maxOutputTokens: 700
+            maxOutputTokens: 1500
           }
         })
       }
