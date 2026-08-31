@@ -64,7 +64,9 @@ async function analyzeDataURL(dataURL){
   try{
     const r=await fetch("/api/scan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image:dataURL})});
     const j=await readApiJson(r);
-    $("#scanResult").innerHTML=`<div class="analysis">${escapeHTML(j.text||"No readable result was returned.")}</div>`;
+    $("#scanResult").innerHTML = renderScanResult(
+  j.text || "No readable result was returned."
+);
   }catch(e){
     $("#scanResult").innerHTML=`<div class="analysis">Scanner error: ${escapeHTML(e.message)}</div>`;
   }finally{
@@ -108,3 +110,52 @@ $("#themeBtn").onclick=()=>document.body.classList.toggle("light");
 let deferred;addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;$("#installBtn").hidden=false});$("#installBtn").onclick=async()=>{if(!deferred)return;deferred.prompt();await deferred.userChoice;deferred=null;$("#installBtn").hidden=true};
 if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));
 renderHome();renderIngredients();renderReminders();renderGraph();renderLearn();loadProfile();
+function renderScanResult(text){
+  const sections = [
+    ["PRODUCT", "scan-product", "📦"],
+    ["INGREDIENTS", "scan-ingredients", "🥗"],
+    ["POSITIVE SIDES", "scan-positive", "✅"],
+    ["NEGATIVE SIDES", "scan-negative", "⚠️"],
+    ["NUTRITION SNAPSHOT", "scan-nutrition", "📊"],
+    ["ALLERGENS", "scan-allergens", "🚨"],
+    ["BASIC TERMS EXPLAINED", "scan-terms", "💡"],
+    ["QUICK TAKE", "scan-quick", "✨"]
+  ];
+
+  let html = "";
+
+  sections.forEach(([title, cls, icon], i) => {
+    const start = text.indexOf(title);
+    if(start === -1) return;
+
+    const next = sections
+      .slice(i + 1)
+      .map(x => text.indexOf(x[0], start + title.length))
+      .find(x => x !== -1);
+
+    const content = text
+      .slice(start + title.length, next === undefined ? text.length : next)
+      .trim();
+
+    if(!content) return;
+
+    const formatted = escapeHTML(content)
+      .replace(/\n/g, "<br>");
+
+    html += `
+      <section class="scan-card ${cls}">
+        <div class="scan-card-title">
+          <span class="scan-card-icon">${icon}</span>
+          <span>${title}</span>
+        </div>
+        <div class="scan-card-content">${formatted}</div>
+      </section>
+    `;
+  });
+
+  return html || `
+    <section class="scan-card scan-product">
+      <div class="scan-card-content">${escapeHTML(text)}</div>
+    </section>
+  `;
+}
