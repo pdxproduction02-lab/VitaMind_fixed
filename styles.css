@@ -70,3 +70,116 @@ body.light .analysis {
   border-color: rgba(40,70,60,0.14);
   box-shadow: 0 10px 28px rgba(30,60,50,0.08);
   }
+/* =========================================================
+   VITAMIND SCANNER — SECTION CARDS
+   ========================================================= */
+
+.scan-card {
+  margin: 12px 0;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(120, 150, 140, 0.18);
+  background: rgba(255,255,255,0.045);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  animation: scanCardIn .35s ease both;
+}
+
+.scan-card-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 11px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.scan-card-icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  font-size: 15px;
+}
+
+.scan-card-content {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+
+/* Positive */
+.scan-positive {
+  border-left: 3px solid #58b88a;
+}
+
+/* Negative */
+.scan-negative {
+  border-left: 3px solid #e2a84b;
+}
+
+/* Allergens */
+.scan-allergens {
+  border-left: 3px solid #df6b6b;
+}
+
+/* Nutrition */
+.scan-nutrition {
+  border-left: 3px solid #6b9ee8;
+}
+
+/* Educational terms */
+.scan-terms {
+  border-left: 3px solid #9b82d8;
+}
+
+/* Quick take */
+.scan-quick {
+  border-left: 3px solid #65b6b0;
+}
+
+/* Product */
+.scan-product {
+  border-left: 3px solid #7aa98e;
+}
+
+/* Ingredients */
+.scan-ingredients {
+  border-left: 3px solid #86a96d;
+}
+
+@keyframes scanCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Light theme */
+body.light .scan-card {
+  background: rgba(255,255,255,.92);
+  border-color: rgba(40,70,60,.12);
+  box-shadow: 0 8px 24px rgba(30,60,50,.07);
+}
+
+@media (max-width: 600px) {
+  .scan-card {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .scan-card-content {
+    font-size: 13px;
+  }
+
+  .scan-card-title {
+    font-size: 12px;
+  }
+}
